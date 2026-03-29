@@ -1,6 +1,6 @@
 import openenv
 import uvicorn
-from epilepsy_env import EpilepsyEnv, EpilepsyAction, EpilepsyObservation
+from epilepsure.env import EpilepsyEnv, EpilepsyAction, EpilepsyObservation
 from openenv.core.env_server.http_server import create_fastapi_app
 
 def serve(env_instance, port=5000):

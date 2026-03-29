@@ -60,7 +60,8 @@ The environment is containerized for easy deployment and interaction via the Ope
     ```
 
 ## Project Structure
-*   `epilepsy_env.py`: Core OpenEnv environment logic.
-*   `data/`: Directory for real-world `.npy` and `.mp4` samples (prioritized by `reset()`).
-*   `server.py`: FastAPI server for the environment.
-*   `train_ppo.py`: Baseline training script using Stable Baselines3.
+*   `epilepsure/`: Core package containing the environment logic (`env.py`).
+*   `scripts/`: Utility scripts for training, testing, and checking flickers.
+*   `data/`: Directory for real-world `.npy` and `.mp4` samples.
+*   `models/`: Saved model weights and checkpoints.
+*   `server.py`: FastAPI server entry point for the environment.

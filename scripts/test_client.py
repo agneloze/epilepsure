@@ -1,7 +1,7 @@
 import random
 import time
 from openenv.core import SyncEnvClient, GenericEnvClient
-from epilepsy_env import EpilepsyAction, EpilepsyObservation
+from epilepsure.env import EpilepsyAction, EpilepsyObservation
 
 def test_client():
     """

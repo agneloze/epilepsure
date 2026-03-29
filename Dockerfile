@@ -11,6 +11,9 @@ WORKDIR /app
 # Copy project files
 COPY . .
 
+# Set PYTHONPATH to include the current directory so 'epilepsure' package is findable
+ENV PYTHONPATH=/app
+
 # Install Python requirements
 RUN pip install --no-cache-dir -r requirements.txt
 

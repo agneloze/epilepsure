@@ -1,7 +1,7 @@
 import gymnasium as gym
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
-import epilepsy_env  # This triggers the Gymnasium registration
+from epilepsure.env import EpilepsyEnv  # This triggers the Gymnasium registration
 
 def train():
     """
@@ -19,16 +19,14 @@ def train():
     print("Starting training for 10,000 steps...")
     
     # Using MlpPolicy as a general-purpose starting point.
-    # For (64, 64, 12) input, CnnPolicy could also be used, 
-    # but MlpPolicy will flatten the observation.
     model = PPO("MlpPolicy", venv, verbose=1)
     
     # Train the model
     model.learn(total_timesteps=10000)
     
     # Save the final model
-    model.save("epilepsy_agent_v1")
-    print("\nTraining complete. Model saved as 'epilepsy_agent_v1'.")
+    model.save("models/epilepsy_agent_v1")
+    print("\nTraining complete. Model saved in 'models/epilepsy_agent_v1'.")
 
 if __name__ == "__main__":
     train()

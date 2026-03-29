@@ -1,0 +1,6 @@
+name: epilepsure-v1
+description: 'A safety-critical RL environment for detecting photosensitive epilepsy triggers using the Harding Test.'
+requirements:
+  - openenv-core
+  - numpy
+  - opencv-python

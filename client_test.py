@@ -41,8 +41,10 @@ def test_client():
             reward = step_result.reward
             obs_dict = step_result.observation
             obs_data = obs_dict.get("obs", [])
+            source = obs_dict.get("source", "unknown")
             print(f"Reward: {reward}")
             print(f"Obs data length: {len(obs_data)}")
+            print(f"Source: {source}")
             
             if step_result.done:
                 print("Episode finished. Resetting for next step...")

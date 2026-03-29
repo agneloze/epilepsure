@@ -51,6 +51,7 @@ class EpilepsyObservation(Observation):
     Contains the 4-frame stack as a flattened or structured array in metadata.
     """
     obs: List[float]  # Flattened (64, 64, 12) array or similar
+    source: str = "synthetic"
     # Inherited fields: done, reward, metadata
 
 class EpilepsyAction(Action):
@@ -237,16 +238,17 @@ class EpilepsyEnv(Environment[EpilepsyAction, EpilepsyObservation, State]):
 
         self._current_obs_array = np.concatenate(frames, axis=2)
         self._episode_done = False
+        self._current_source = "file" if all_files and frames else "synthetic"
 
         return EpilepsyObservation(
             obs=self._current_obs_array.flatten().tolist(),
+            source=self._current_source,
             done=False,
             reward=0.0,
             metadata={
                 "scenario": self._scenario_name(self._current_scenario),
                 "is_danger": self._current_scenario in DANGER_LABELS,
-                "shape": [64, 64, 12],
-                "source": "file" if all_files and frames else "synthetic"
+                "shape": [64, 64, 12]
             }
         )
 
@@ -267,6 +269,7 @@ class EpilepsyEnv(Environment[EpilepsyAction, EpilepsyObservation, State]):
 
         return EpilepsyObservation(
             obs=self._current_obs_array.flatten().tolist(),
+            source=self._current_source,
             done=True,
             reward=float(reward),
             metadata={

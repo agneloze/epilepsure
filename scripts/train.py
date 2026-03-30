@@ -1,7 +1,7 @@
-import gymnasium as gym
+import openenv.core as openenv
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
-from epilepsure.env import EpilepsyEnv  # This triggers the Gymnasium registration
+from epilepsure.env import EpilepsyEnv
 
 def train():
     """
@@ -9,8 +9,7 @@ def train():
     """
     print("Initializing EpilepsySafety-v0 environment...")
     
-    # Create the environment using the registered ID
-    env = gym.make('EpilepsySafety-v0')
+    env = EpilepsyEnv()
     
     # Stable Baselines3 requires a vectorized environment
     # DummyVecEnv is used to wrap a single environment instance

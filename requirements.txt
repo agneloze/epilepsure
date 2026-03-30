@@ -1,9 +1,7 @@
 openenv-core
-gymnasium
 numpy
 opencv-python
 uvicorn
 fastapi
 pydantic
 stable-baselines3
-shimmy

@@ -307,11 +307,4 @@ class EpilepsyEnv(Environment[EpilepsyAction, EpilepsyObservation, State]):
     @staticmethod
     def _scenario_name(scenario: int) -> str:
         return {SAFE: "SAFE", BW_FLICKER: "BW_FLICKER", RED_FLICKER: "RED_FLICKER"}.get(scenario, "UNKNOWN")
-\
-from gymnasium.envs.registration import register
 
-# -- Gymnasium Registration ----------------------
-register(
-    id='EpilepsySafety-v0',
-    entry_point='epilepsure.env:EpilepsyEnv',
-)\

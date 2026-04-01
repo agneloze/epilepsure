@@ -5,3 +5,5 @@ uvicorn
 fastapi
 pydantic
 stable-baselines3
+gymnasium
+tensorboard

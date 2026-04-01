@@ -46,18 +46,55 @@ The environment is containerized for easy deployment and interaction via the Ope
     The environment will now be served at `http://localhost:5000`.
 
 ### Local Development
-1.  **Install Dependencies:**
+1.  **Clone the Repository:**
+    ```bash
+    git clone https://github.com/your-username/Epilepsure-RL.git
+    cd Epilepsure-RL
+    ```
+2.  **Set Up a Virtual Environment (Recommended):**
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # On Windows: venv\Scripts\activate
+    ```
+3.  **Install Dependencies:**
     ```bash
     pip install -r requirements.txt
     ```
-2.  **Start the Server:**
+4.  **Start the Environment Server:**
     ```bash
     python server.py
     ```
-3.  **Run a Client Test:**
+5.  **Run a Client Test:**
     ```bash
-    python client_test.py
+    python scripts/test_client.py
     ```
+
+## Training and Evaluation
+The project includes pre-configured scripts for training a PPO (Proximal Policy Optimization) agent and evaluating its performance.
+
+### Training the Agent
+To start training the agent for 10,000 steps (default):
+```bash
+python scripts/train.py
+```
+This will save model checkpoints in the `models/` directory and logs in `tensorboard_logs/`.
+
+### Evaluating the Agent
+Once a model is trained, you can evaluate its performance across 100 episodes to see its accuracy and reward stats:
+```bash
+python scripts/evaluate.py
+```
+The script will automatically look for the latest model in the `models/` folder.
+
+## Monitoring with TensorBoard
+You can monitor training progress (reward, loss, episode length) in real-time using TensorBoard:
+
+1.  **Start TensorBoard:**
+    ```bash
+    tensorboard --logdir=tensorboard_logs
+    ```
+2.  **Open in Browser:**
+    Navigate to `http://localhost:6006` to view the dashboards.
 
 ## Project Structure
 *   `epilepsure/`: Core package containing the environment logic (`env.py`).

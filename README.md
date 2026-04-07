@@ -1,6 +1,6 @@
 ---
-title: Epilepsure-RL
-emoji: 
+title: Epilepsure
+emoji: 🧠
 colorFrom: red
 colorTo: orange
 sdk: docker

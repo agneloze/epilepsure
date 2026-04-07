@@ -21,8 +21,8 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from epilepsure.env import EpilepsyEnv
-from epilepsure.models import EpilepsyAction
+from server.epilepsure_environment import EpilepsyEnv
+from models import EpilepsyAction
 
 OBS_DIM = 64 * 64 * 3   # single-frame flat observation
 

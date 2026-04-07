@@ -29,9 +29,8 @@ import numpy as np
 # Add project root to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from epilepsure.env import EpilepsyEnv
-from epilepsure.models import EpilepsyAction
-from epilepsure.graders import grade_task1, grade_task2, grade_task3
+from server.epilepsure_environment import EpilepsyEnv, grade_task1, grade_task2, grade_task3
+from models import EpilepsyAction
 
 try:
     from openai import OpenAI

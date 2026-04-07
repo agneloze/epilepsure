@@ -1,0 +1,11 @@
+openenv-core
+numpy
+opencv-python-headless
+fastapi
+uvicorn
+pydantic
+openai
+Pillow
+stable-baselines3
+shimmy
+gymnasium

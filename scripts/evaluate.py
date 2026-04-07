@@ -18,8 +18,8 @@ from stable_baselines3 import PPO
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from epilepsure.env import EpilepsyEnv
-from epilepsure.models import EpilepsyAction
+from server.epilepsure_environment import EpilepsyEnv
+from models import EpilepsyAction
 
 # Reuse wrapper from train.py
 from scripts.train import EpilepsyGymWrapper

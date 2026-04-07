@@ -1,7 +1,7 @@
 import random
 import time
 from openenv.core import SyncEnvClient, GenericEnvClient
-from epilepsure.env import EpilepsyAction, EpilepsyObservation
+from models import EpilepsyAction, EpilepsyObservation
 
 def test_client():
     """
@@ -30,7 +30,7 @@ def test_client():
         # 2. Loop for 10 steps
         for i in range(1, 11):
             action_val = random.choice([0, 1])
-            action = EpilepsyAction(prediction=action_val)
+            action = EpilepsyAction(decision=action_val)
             
             print(f"\n--- Step {i} ---")
             print(f"Action: {'Danger' if action_val == 1 else 'Safe'} ({action_val})")

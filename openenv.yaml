@@ -1,0 +1,97 @@
+name: epilepsure-v2
+version: "2.0"
+description: >
+  A safety-critical RL environment for detecting photosensitive epilepsy triggers
+  using the Harding Test. Agents make sequential, frame-by-frame moderation decisions
+  across three tasks of increasing difficulty.
+
+tags:
+  - openenv
+  - reinforcement-learning
+  - content-moderation
+  - safety
+  - computer-vision
+
+requirements:
+  - openenv-core
+  - numpy
+  - opencv-python
+  - fastapi
+  - uvicorn
+
+observation_space:
+  type: Box
+  shape: [12288]         # 64 × 64 × 3 flattened uint8 frame
+  dtype: uint8
+  description: >
+    Single RGB video frame (64×64), flattened to a 12 288-element vector.
+    Each episode step reveals one new frame.
+
+tasks:
+  - id: task1
+    name: "Binary Moderation"
+    difficulty: easy
+    max_steps: 4
+    action_space:
+      type: Discrete
+      n: 3
+      actions:
+        0: continue_watching
+        1: flag_safe
+        2: flag_danger
+    grader: "epilepsure.graders.grade_task1"
+    description: >
+      Observe up to 4 frames one at a time and decide Safe or Danger.
+      Early correct decisions score 1.0; decisions on frame 3-4 score 0.8.
+
+  - id: task2
+    name: "Violation Classification"
+    difficulty: medium
+    max_steps: 4
+    action_space:
+      type: Discrete
+      n: 4
+      actions:
+        0: continue_watching
+        1: flag_safe
+        2: flag_bw_flicker
+        3: flag_red_flicker
+    grader: "epilepsure.graders.grade_task2"
+    description: >
+      Same as task1 but agent must identify the exact violation type.
+      Correct type = 1.0; correct danger direction but wrong type = 0.5;
+      wrong direction = 0.0.
+
+  - id: task3
+    name: "Queue Triage"
+    difficulty: hard
+    max_steps: 20
+    action_space:
+      type: Discrete
+      n: 5
+      actions:
+        0: skip_safe
+        1: escalate_danger
+        2: request_full_review
+        3: commit_safe
+        4: commit_danger
+    grader: "epilepsure.graders.grade_task3"
+    description: >
+      Review a queue of 5 clips. Each clip shows a 1-frame preview.
+      Agent can skip, escalate, or request a 3-frame full review.
+      Graded by F1 score with a penalty for missed red flickers.
+
+reward_structure:
+  correct_danger:   +10.0
+  correct_safe:      +1.0
+  missed_bw:        -20.0
+  missed_red:       -50.0
+  false_alarm:       -5.0
+  review_step_cost:  -0.5   # per "continue_watching" step
+
+endpoints:
+  reset:  POST /reset
+  step:   POST /step
+  state:  GET  /state
+  info:   GET  /info
+  health: GET  /health

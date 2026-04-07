@@ -1,80 +1,90 @@
-import sys
+"""
+Evaluate a trained PPO model on any task.
+
+Usage:
+    python scripts/evaluate.py --task task1 --model models/epilepsy_task1_final
+    python scripts/evaluate.py --task task3 --episodes 50
+"""
+
+from __future__ import annotations
+
+import argparse
+import glob
 import os
+import sys
+
 import numpy as np
-import gymnasium as gym
 from stable_baselines3 import PPO
-from stable_baselines3.common.vec_env import DummyVecEnv
 
-# Add project root to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from epilepsure.env import EpilepsyEnv, EpilepsyAction
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-class OpenEnvToGymWrapper(gym.Env):
-    def __init__(self, openenv_env):
-        super().__init__()
-        self.env = openenv_env
-        self.action_space = gym.spaces.Discrete(2)
-        self.observation_space = gym.spaces.Box(low=0, high=255, shape=(49152,), dtype=np.uint8)
+from epilepsure.env import EpilepsyEnv
+from epilepsure.models import EpilepsyAction
 
-    def reset(self, seed=None, options=None):
-        super().reset(seed=seed)
-        obs = self.env.reset(seed=seed)
-        obs_array = np.array(obs.obs, dtype=np.uint8)
-        return obs_array, obs.metadata
+# Reuse wrapper from train.py
+from scripts.train import EpilepsyGymWrapper
 
-    def step(self, action):
-        openenv_action = EpilepsyAction(prediction=int(action))
-        obs = self.env.step(openenv_action)
-        obs_array = np.array(obs.obs, dtype=np.uint8)
-        return obs_array, float(obs.reward), bool(obs.done), False, obs.metadata
 
-def evaluate(model_path, num_episodes=100):
-    print(f"Loading model from {model_path}...")
+def find_latest_model(task_id: str) -> str | None:
+    patterns = [
+        f"models/epilepsy_{task_id}_final.zip",
+        f"models/epilepsy_{task_id}_ckpt_*.zip",
+    ]
+    candidates = []
+    for p in patterns:
+        candidates.extend(glob.glob(p))
+    if not candidates:
+        return None
+    return max(candidates, key=os.path.getmtime).replace(".zip", "")
+
+
+def evaluate(task_id: str, model_path: str, n_episodes: int) -> None:
+    print(f"\nEvaluating {task_id} | model={model_path} | episodes={n_episodes}")
     model = PPO.load(model_path)
-    
-    raw_env = EpilepsyEnv()
-    env = OpenEnvToGymWrapper(raw_env)
-    
-    stats = {
-        "correct_danger": 0,
-        "correct_safe": 0,
-        "missed_red": 0,
-        "missed_bw": 0,
-        "false_alarms": 0,
-        "total_reward": 0.0
-    }
-    
-    print(f"Evaluating over {num_episodes} episodes...")
-    
-    for i in range(num_episodes):
-        obs, info = env.reset()
-        action, _states = model.predict(obs, deterministic=True)
-        obs, reward, done, truncated, info = env.step(action)
-        
-        stats["total_reward"] += reward
-        stat_key = info.get("stat")
-        if stat_key in stats:
-            stats[stat_key] += 1
-            
-    print("\n--- Evaluation Results ---")
-    print(f"Average Reward: {stats['total_reward'] / num_episodes:.2f}")
-    print(f"Correct Dangers Caught: {stats['correct_danger']}")
-    print(f"Correct Safes Identified: {stats['correct_safe']}")
-    print(f"False Alarms: {stats['false_alarms']}")
-    print(f"Missed BW Flickers: {stats['missed_bw']}")
-    print(f"Missed RED Flickers (Critical!): {stats['missed_red']}")
-    
-    accuracy = (stats['correct_danger'] + stats['correct_safe']) / num_episodes * 100
-    print(f"Overall Accuracy: {accuracy:.1f}%")
+    env = EpilepsyGymWrapper(task_id=task_id)
+
+    grades, rewards, stat_counts = [], [], {}
+
+    for ep in range(n_episodes):
+        obs, _ = env.reset(seed=1000 + ep)
+        done = False
+        ep_reward = 0.0
+        last_info = {}
+        while not done:
+            action, _ = model.predict(obs, deterministic=True)
+            obs, reward, terminated, truncated, info = env.step(int(action))
+            ep_reward += reward
+            done = terminated or truncated
+            last_info = info
+
+        grade = last_info.get("grade", 0.0)
+        grades.append(grade)
+        rewards.append(ep_reward)
+
+        stat = last_info.get("stat") or last_info.get("grade_label", "")
+        stat_counts[stat] = stat_counts.get(stat, 0) + 1
+
+    print(f"\n{'─'*50}")
+    print(f"  Results over {n_episodes} episodes:")
+    print(f"  avg grade  = {np.mean(grades):.4f}  (std {np.std(grades):.4f})")
+    print(f"  avg reward = {np.mean(rewards):+.2f}  (std {np.std(rewards):.2f})")
+    print(f"  Outcome breakdown:")
+    for k, v in sorted(stat_counts.items(), key=lambda x: -x[1]):
+        print(f"    {k:30s}  {v:4d}  ({100*v/n_episodes:.1f}%)")
+    print(f"{'─'*50}\n")
+
 
 if __name__ == "__main__":
-    model_file = "models/epilepsy_agent_v2"
-    if os.path.exists(model_file + ".zip"):
-        evaluate(model_file)
-    else:
-        # Fallback to v1 if v2 doesn't exist
-        model_file = "models/epilepsy_agent_v1"
-        if os.path.exists(model_file + ".zip"):
-            evaluate(model_file)
-        else:
-            print("Error: No model files found in models/ folder.")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--task",     default="task1",
+                        choices=["task1", "task2", "task3"])
+    parser.add_argument("--model",    default=None)
+    parser.add_argument("--episodes", type=int, default=100)
+    args = parser.parse_args()
+
+    model_path = args.model or find_latest_model(args.task)
+    if model_path is None:
+        print(f"No model found for {args.task}. Train first with scripts/train.py")
+        sys.exit(1)
+
+    evaluate(args.task, model_path, args.episodes)

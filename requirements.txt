@@ -1,9 +1,0 @@
-openenv-core
-numpy
-opencv-python
-uvicorn
-fastapi
-pydantic
-stable-baselines3
-gymnasium
-tensorboard

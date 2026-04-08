@@ -1,13 +1,11 @@
 """
 EpilepsyEnv FastAPI server (OpenEnv HTTP protocol).
 
-By default serves task1. Pass ?task_id=task2 in the reset request body
-or set the EPILEPSY_TASK env var to change the active task.
+By default serves task1. Set EPILEPSY_TASK env var to change the active task.
 """
 
 from __future__ import annotations
 
-import argparse
 import os
 import uvicorn
 from fastapi import FastAPI
@@ -23,7 +21,7 @@ except ImportError:
     _HAS_OPENENV_SERVER = False
 
 
-# ── Fallback minimal server ──────────────────────────────────────────────────
+# ── Build app at module level so uvicorn can import it ───────────────────────
 
 def _create_minimal_app(env: EpilepsyEnv) -> FastAPI:
     app = FastAPI(title="EpilepsyEnv", version="2.0")
@@ -35,14 +33,13 @@ def _create_minimal_app(env: EpilepsyEnv) -> FastAPI:
 
     @app.get("/")
     def read_root():
-        """Health check for Hugging Face /health proxy"""
-        return {"status": "Epilepsure-RL is running", "active_task": env.task_id}
+        return {"status": "Epilepsure-RL is running", "active_task": env._task_id}
 
     @app.get("/health")
     def health():
         return {"status": "ok", "env": "EpilepsyEnv-v2"}
 
-    @app.post("/reset", response_model=dict)
+    @app.post("/reset")
     def reset(req: ResetRequest = ResetRequest()):
         obs = env.reset(
             seed=req.seed,
@@ -51,7 +48,7 @@ def _create_minimal_app(env: EpilepsyEnv) -> FastAPI:
         )
         return obs.model_dump()
 
-    @app.post("/step", response_model=dict)
+    @app.post("/step")
     def step(action: EpilepsyAction):
         obs = env.step(action)
         return obs.model_dump()
@@ -73,17 +70,9 @@ def _create_minimal_app(env: EpilepsyEnv) -> FastAPI:
         }
 
     return app
-    
-# 1. The Deployment needs a named main function
-def main():
-    # 2. It needs to handle the dynamic port
-    port = int(os.environ.get("PORT", 5000))
-    uvicorn.run("server.app:app", host="0.0.0.0", port=port)
 
-# 3. It needs the standard Python entry point
-if __name__ == "__main__":
-    main()
-def build_app(task_id: str) -> FastAPI:
+
+def _build_app(task_id: str) -> FastAPI:
     env = EpilepsyEnv(task_id=task_id)
     if _HAS_OPENENV_SERVER:
         try:
@@ -91,3 +80,18 @@ def build_app(task_id: str) -> FastAPI:
         except Exception:
             pass
     return _create_minimal_app(env)
+
+
+# Module-level `app` — required by uvicorn "server.app:app" and openenv validate
+app: FastAPI = _build_app(os.environ.get("EPILEPSY_TASK", "task1"))
+
+
+# ── Entry point ───────────────────────────────────────────────────────────────
+
+def main() -> None:
+    port = int(os.environ.get("PORT", 5000))
+    uvicorn.run("server.app:app", host="0.0.0.0", port=port, reload=False)
+
+
+if __name__ == "__main__":
+    main()

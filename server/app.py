@@ -73,8 +73,16 @@ def _create_minimal_app(env: EpilepsyEnv) -> FastAPI:
         }
 
     return app
+    
+# 1. The Deployment needs a named main function
+def main():
+    # 2. It needs to handle the dynamic port
+    port = int(os.environ.get("PORT", 5000))
+    uvicorn.run("server.app:app", host="0.0.0.0", port=port)
 
-
+# 3. It needs the standard Python entry point
+if __name__ == "__main__":
+    main()
 def build_app(task_id: str) -> FastAPI:
     env = EpilepsyEnv(task_id=task_id)
     if _HAS_OPENENV_SERVER:

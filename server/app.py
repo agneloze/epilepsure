@@ -1,19 +1,14 @@
 """
 EpilepsyEnv FastAPI server (OpenEnv HTTP protocol).
 
-By default serves task1.  Pass ?task_id=task2 in the reset request body
+By default serves task1. Pass ?task_id=task2 in the reset request body
 or set the EPILEPSY_TASK env var to change the active task.
-
-Start:
-    python server.py
-    python server.py --task task3 --port 5000
 """
 
 from __future__ import annotations
 
 import argparse
 import os
-
 import uvicorn
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -28,7 +23,7 @@ except ImportError:
     _HAS_OPENENV_SERVER = False
 
 
-# ── Fallback minimal server (if openenv server module not available) ──────────
+# ── Fallback minimal server ──────────────────────────────────────────────────
 
 def _create_minimal_app(env: EpilepsyEnv) -> FastAPI:
     app = FastAPI(title="EpilepsyEnv", version="2.0")
@@ -37,6 +32,11 @@ def _create_minimal_app(env: EpilepsyEnv) -> FastAPI:
         seed: int | None = None
         task_id: str | None = None
         episode_id: str | None = None
+
+    @app.get("/")
+    def read_root():
+        """Health check for Hugging Face /health proxy"""
+        return {"status": "Epilepsure-RL is running", "active_task": env.task_id}
 
     @app.get("/health")
     def health():
@@ -83,16 +83,3 @@ def build_app(task_id: str) -> FastAPI:
         except Exception:
             pass
     return _create_minimal_app(env)
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--task", default=os.environ.get("EPILEPSY_TASK", "task1"),
-                        choices=["task1", "task2", "task3"])
-    parser.add_argument("--port", type=int, default=5000)
-    parser.add_argument("--host", default="0.0.0.0")
-    args = parser.parse_args()
-
-    print(f"Starting EpilepsyEnv server | task={args.task} | port={args.port}")
-    app = build_app(args.task)
-    uvicorn.run(app, host=args.host, port=args.port)

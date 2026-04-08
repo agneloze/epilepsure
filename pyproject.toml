@@ -1,7 +1,8 @@
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.backends.legacy:build"
-
+[project.scripts]
+epilepsure-server = "server.app:main"
 [project]
 name = "epilepsure"
 version = "2.0.0"

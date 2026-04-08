@@ -8,10 +8,13 @@ version = "2.0.0"
 dependencies = [
     "openenv-core",
     "numpy",
-    "opencv-python",
+    "opencv-python-headless",
     "fastapi",
     "uvicorn",
     "pydantic",
     "openai",
     "Pillow",
+    "stable-baselines3",
+    "shimmy",
+    "gymnasium",
 ]

@@ -1,21 +1,25 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=68"]
 build-backend = "setuptools.backends.legacy:build"
-[project.scripts]
-epilepsure-server = "server.app:main"
+
 [project]
 name = "epilepsure"
 version = "2.0.0"
+description = "RL environment for photosensitive epilepsy content moderation"
+requires-python = ">=3.10"
 dependencies = [
     "openenv-core",
     "numpy",
-    "opencv-python-headless",
+    "opencv-python",
     "fastapi",
     "uvicorn",
     "pydantic",
     "openai",
     "Pillow",
     "stable-baselines3",
-    "shimmy",
     "gymnasium",
+    "tensorboard",
 ]
+
+[project.scripts]
+epilepsure-server = "server.app:main"

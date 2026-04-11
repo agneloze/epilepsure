@@ -1,0 +1,35 @@
+name: Sync to Hugging Face Space
+
+on:
+  push:
+    branches: [ main ]
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for all branches and tags
+          lfs: true      # Fetch Git LFS files if any exist
+
+      - name: Push to HF Spaces
+        env:
+          # IMPORTANT: Set these secrets in your GitHub repository settings under Secrets & Variables -> Actions
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_USERNAME: ${{ secrets.HF_USERNAME }}
+          # Alternatively, you can hardcode the space name here like HF_SPACE_NAME: "Epilepsure-RL"
+          HF_SPACE_NAME: ${{ secrets.HF_SPACE_NAME }}
+        run: |
+          if [ -z "$HF_TOKEN" ] || [ -z "$HF_USERNAME" ] || [ -z "$HF_SPACE_NAME" ]; then
+            echo "Error: Missing HF_TOKEN, HF_USERNAME, or HF_SPACE_NAME secret"
+            echo "Please configure these in your GitHub repository settings."
+            exit 1
+          fi
+          
+          # Add the Hugging Face Space as a remote and push master/main forcefully
+          git remote add hf "https://$HF_USERNAME:$HF_TOKEN@huggingface.co/spaces/$HF_USERNAME/$HF_SPACE_NAME"
+          # Push the local main branch to the remote main branch
+          git push --force hf main:main

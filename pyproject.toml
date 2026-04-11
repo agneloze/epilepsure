@@ -22,4 +22,5 @@ dependencies = [
 ]
 
 [project.scripts]
+server = "server.app:main"
 epilepsure-server = "server.app:main"

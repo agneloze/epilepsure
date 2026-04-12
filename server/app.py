@@ -72,7 +72,7 @@ def _create_minimal_app(env: EpilepsyEnv) -> FastAPI:
     return app
 
 
-def _build_app(task_id: str) -> FastAPI:
+def build_app(task_id: str) -> FastAPI:
     env = EpilepsyEnv(task_id=task_id)
     if _HAS_OPENENV_SERVER:
         try:
@@ -83,7 +83,7 @@ def _build_app(task_id: str) -> FastAPI:
 
 
 # Module-level `app` — required by uvicorn "server.app:app" and openenv validate
-app: FastAPI = _build_app(os.environ.get("EPILEPSY_TASK", "task1"))
+app: FastAPI = build_app(os.environ.get("EPILEPSY_TASK", "task1"))
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

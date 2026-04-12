@@ -17,6 +17,7 @@ ENV EPILEPSY_TASK=task1
 ENV PORT=5000
 
 # Install the package and all dependencies from pyproject.toml
+RUN pip install --upgrade pip setuptools wheel
 RUN pip install --no-cache-dir .
 
 # Expose the default port

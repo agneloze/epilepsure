@@ -14,100 +14,216 @@ license: mit
 pinned: false
 ---
 
-# Epilepsure v2: Reinforcement Learning for Photosensitive Epilepsy Detection
+# Epilepsure: RL Environment for Photosensitive Epilepsy Content Moderation
 
-**Epilepsure** is an OpenEnv-compatible reinforcement learning (RL) framework designed to train and benchmark agents on the detection of photosensitive epilepsy (PSE) triggers. It implements the **Harding Test**—the global broadcast standard for flash and pattern safety—to identify visual risks such as high-frequency strobes and saturated red flickers.
+Epilepsure is a safety-critical, OpenEnv-compatible reinforcement learning (RL) framework designed to train and benchmark agents on the detection of photosensitive epilepsy (PSE) triggers. By implementing the Harding Test rules (the global broadcast standard for flash and pattern safety), Epilepsure allows AI agents to make sequential, frame-by-frame moderation decisions across tasks of increasing difficulty to identify risks such as high-frequency strobes and saturated red flickers.
 
----
+## Key Features
 
-## Project Overview
+- **Sequential Analysis**: Agents observe one frame at a time, mimicking a human reviewer's process.
+- **Graded Difficulty Tasks**: From binary safe/danger classification to detailed violation type identification and triage queue management.
+- **OpenEnv Compatible**: Fully compliant with OpenEnv specifications for seamless integration and benchmarking.
+- **Dense Reward Structure**: Includes step costs to incentivize speed and heavy penalties for critical safety misses.
 
-Photosensitive epilepsy affects millions of people worldwide. Traditional moderation often relies on human review or static filters. This project treats moderation as a sequential decision-making problem:
-1. **Sequential Analysis**: Agents observe one frame at a time, mimicking a human reviewer.
-2. **Decision Logic**: Agents must decide whether to continue watching (costing time/resources) or commit to a "Safe" or "Danger" classification.
-3. **Queue Management**: In advanced tasks, agents manage a triage queue, balancing thoroughness with efficiency.
+## Tech Stack
 
----
+- **Language**: Python 3.10+
+- **Framework**: FastAPI (for the underlying server API)
+- **RL Libraries**: Stable Baselines 3, Gymnasium, TensorBoard
+- **Core Dependencies**: NumPy, OpenCV-Python, Pydantic, Pillow
+- **Deployment**: Docker, Hugging Face Spaces (via OpenEnv)
 
-## Repository Structure
+## Prerequisites
 
-```text
-├── models.py                # Pydantic definitions for Observations, Actions, and Rewards
-├── inference.py             # LLM-based (GPT-4o-mini) zero-shot inference script
-├── openenv.yaml             # OpenEnv environment configuration metadata
-├── server/
-│   ├── app.py               # FastAPI server for remote RL training/inference
-│   └── epilepsure_environment.py # Core environment logic, generators, and graders
-├── scripts/
-│   ├── train.py             # PPO training script using Stable Baselines 3
-│   ├── evaluate.py          # Model evaluation and metrics reporting
-│   ├── test_client.py       # Integration test for server-client communication
-│   └── flicker_check.py     # Static heuristic for flicker detection
-└── data/                    # Placeholder for local datasets or logs
-```
-
----
+- Python 3.10 or higher
+- Docker (optional, but recommended for consistent deployment)
+- A virtual environment tool (`venv`, `conda`, `uv`, etc.)
 
 ## Getting Started
 
-### Prerequisites
-- Python 3.10+
-- Virtual environment (recommended)
+### 1. Clone the Repository
 
-### Installation
+```bash
+git clone https://github.com/agneloze/Epilepsure-RL.git
+cd Epilepsure-RL
+```
+
+### 2. Set Up a Virtual Environment
+
 ```bash
 python -m venv venv
-.\venv\Scripts\activate  # Windows
+# On Windows:
+.\venv\Scripts\activate
+# On macOS/Linux:
+source venv/bin/activate
+```
+
+### 3. Install Dependencies
+
+Install the project in editable mode along with its dependencies:
+
+```bash
 pip install -r requirements.txt
 ```
 
-### 1. Running the Local Server
-The environment runs as a FastAPI server. This allows for language-agnostic interaction via HTTP.
+
+### 4. Environment Setup
+
+Configure the following basic environment variables (you can export them or place them in an `.env` file if deploying via Docker):
+
+| Variable        | Description                            | Default |
+|-----------------|----------------------------------------|---------|
+| `EPILEPSY_TASK` | The active RL task (task1, task2, task3) | `task1` |
+| `PORT`          | The port the FastAPI server runs on    | `5000`  |
+
+### 5. Start Development Server
+
+Run the FastAPI environment server locally:
+
 ```bash
-$env:PYTHONPATH="."; .\venv\Scripts\python.exe -m server.app --task task1 --port 5000
+python server.py
+# Or use the installed CLI command:
+# epilepsure-server
 ```
 
-### 2. Reinforcement Learning (RL)
-To train an agent using Proximal Policy Optimization (PPO):
-```bash
-$env:PYTHONPATH="."; .\venv\Scripts\python.exe scripts/train.py --task task1 --steps 50000
-```
-To evaluate a trained model:
-```bash
-$env:PYTHONPATH="."; .\venv\Scripts\python.exe scripts/evaluate.py --task task1 --model models/epilepsy_task1_final
-```
+You should see the server starting on `http://0.0.0.0:5000`.
 
-### 3. LLM-Based Inference (Baseline)
-To run the vision-based LLM baseline (requires an API key):
+### 6. Run RL Training or Inference
+
+**To train an agent using Proximal Policy Optimization (PPO):**
 ```bash
-$env:OPENAI_API_KEY="your_key_here"; $env:PYTHONPATH="."; .\venv\Scripts\python.exe inference.py
+python scripts/train.py --task task1 --steps 50000
 ```
 
----
+**To evaluate a trained model:**
+```bash
+python scripts/evaluate.py --task task1 --model models/epilepsy_task1_final
+```
 
-## Tasks and Evaluation
+**To run the vision-based LLM baseline:**
+```bash
+export OPENAI_API_KEY="your_api_key"
+python inference.py
+```
 
-### Task 1: Binary Moderation
-- **Goal**: Identify if a clip is `Safe` or `Danger`.
-- **Constraint**: Maximum 4 frames.
-- **Scoring**: Higher scores for early, accurate decisions.
+## Architecture
 
-### Task 2: Violation Classification
-- **Goal**: Differentiate between Black-and-White (BW) flicker and Saturated Red flicker.
-- **Constraint**: Identifying the specific Harding Rule violation.
+### Directory Structure
 
-### Task 3: Queue Triage
-- **Goal**: Manage a queue of 5 clips using a "Preview" and "Full Review" system.
-- **Metric**: F1-Score on danger detection with penalties for missing high-risk red flickers.
+```text
+├── server/
+│   ├── app.py                      # FastAPI server logic and routing
+│   └── epilepsure_environment.py   # Core Gymnasium RL environment, frame generation, rule logic
+├── scripts/
+│   ├── train.py                    # RL PPO training script
+│   ├── evaluate.py                 # RL evaluation script
+│   ├── test_client.py              # Server-client integration testing
+│   └── flicker_check.py            # Static heuristic rules for flicker
+├── tests/                          # Automated tests
+├── models.py                       # Pydantic schemas for Actions, Observations, etc.
+├── inference.py                    # Zero-shot GPT-4o-mini inference logic
+├── client.py                       # SyncEnvClient for interacting with the server
+├── openenv.yaml                    # OpenEnv standard metadata config
+├── pyproject.toml                  # Python packaging and dependency config
+├── Dockerfile                      # Container definition
+└── requirements.txt                # Legacy dependencies list
+```
 
----
+### Request Lifecycle for the Environment Server
 
-## Technical Specifications
-- **Observation Space**: Flattened RGB frames (64x64x3), normalized to uint8.
-- **Action Space**: Discrete actions (Continue, Flag Safe, Flag Danger, etc.).
-- **Reward Function**: Dense rewards including step costs (-0.5) to incentivize speed and heavy penalties (-50.0) for critical safety misses.
+1. A client issues a `POST /reset` to initialize a new episode or `POST /step` to take an action.
+2. The `app.py` FastAPI server parses the request and validates the action payload using Pydantic schemas (`models.py`).
+3. The request is passed to the core `epilepsure_environment.py` instance representing the environment.
+4. The environment computes the frame logic, generates the new observation (usually a 64x64 RGB flattened array), assigns the reward, checks if the episode is done, and provides additional metadata.
+5. The result is returned via JSON to the RL algorithm or testing client.
 
----
+### Task Specifications
 
-## License
-This project is licensed under the MIT License.
+**Task 1: Binary Moderation**
+- **Action Space**: 3 discrete actions (`continue_watching`, `flag_safe`, `flag_danger`).
+- **Goal**: Decide Safe vs Danger observing sequentially up to 4 frames.
+- **Grader**: `epilepsure.graders.grade_task1`
+
+**Task 2: Violation Classification**
+- **Action Space**: 4 discrete actions (`continue_watching`, `flag_safe`, `flag_bw_flicker`, `flag_red_flicker`).
+- **Goal**: Identify the exact violation type (or Safe).
+
+**Task 3: Queue Triage**
+- **Action Space**: 5 discrete actions (`skip_safe`, `escalate_danger`, `request_full_review`, `commit_safe`, `commit_danger`).
+- **Goal**: Route a queue of 5 clips, optimizing for F1 score heavily penalizing missed red flickers.
+
+## Environment Variables
+
+### Core Configuration
+
+| Variable          | Description                                  | Default |
+|-------------------|----------------------------------------------|---------|
+| `EPILEPSY_TASK`   | Dictates which of the 3 tasks the server will run | `task1` |
+| `PORT`            | FastAPI binding port                         | `5000`  |
+| `OPENAI_API_KEY`  | For running baseline LLM evaluation inference | -       |
+
+## Available Scripts
+
+| Command                                                    | Description                                           |
+|------------------------------------------------------------|-------------------------------------------------------|
+| `python server.py`                                         | Starts the FastAPI environment server                 |
+| `epilepsure-server`                                        | (If installed) Starts the FastAPI environment server  |
+| `python inference.py`                                      | Runs the vision-based LLM baseline evaluation         |
+| `python scripts/train.py --task <task> --steps <N>`        | Initiates a PPO training run                          |
+| `python scripts/evaluate.py --task <task> --model <path>`  | Evaluates a saved stable-baselines3 model             |
+
+## Testing
+
+To run the test suite (if configured) or test integration with the running server:
+
+```bash
+# Ensure server is running in another terminal
+python server.py
+
+# Run the integration test client
+python scripts/test_client.py
+```
+
+## Deployment
+
+### Docker
+
+The project provides a `Dockerfile` that packages the application, its OpenCV dependencies, and starts the FastAPI server natively.
+
+```bash
+# 1. Build the Docker image
+docker build -t epilepsure .
+
+# 2. Run the container
+docker run -p 5000:5000 \
+  -e EPILEPSY_TASK=task1 \
+  -e PORT=5000 \
+  epilepsure
+```
+You can now interface with the environment at `http://localhost:5000`.
+
+### Hugging Face Spaces (OpenEnv)
+
+Because of the presence of `openenv.yaml` and the standard Hugging Face headers, you can deploy this as a Docker Space on Hugging Face. When pushing to a fresh Hugging Face Space configured as `Docker`, the platform will automatically build using the supplied `Dockerfile` and expose it securely on port 5000.
+
+## Troubleshooting
+
+### OpenCV Library Errors
+**Error:** `ImportError: libGL.so.1: cannot open shared object file: No such file or directory` or similar
+
+**Solution:**
+OpenCV requires certain system dependencies. The provided `Dockerfile` already installs them (`libglib2.0-0` or `libgl1-mesa-glx`), but if you are running locally without Docker on Linux, install the dependencies manually:
+```bash
+sudo apt-get update && sudo apt-get install libgl1
+```
+*(Alternatively, uninstall `opencv-python` and install `opencv-python-headless`)*
+
+### PPO Dependencies Issue
+**Error:** Module not found for `stable_baselines3` or `gymnasium`.
+
+**Solution:** Make sure you installed the dependencies with `pip install .` or `pip install -r requirements.txt`. Re-activate your virtual environment.
+
+### Connection Refused
+**Error:** Client outputs `Connection refused` when starting RL training script or inference.
+
+**Solution:** The remote RL architecture relies on the server running first. Keep `python server.py` running in a separate terminal before executing the RL or inference scripts.
